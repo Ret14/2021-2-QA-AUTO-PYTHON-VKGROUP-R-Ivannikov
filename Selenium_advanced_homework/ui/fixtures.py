@@ -1,5 +1,4 @@
 import logging
-
 import allure
 import pytest
 import numpy
@@ -9,8 +8,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-
-from ui.pages.base_page import BasePage
 
 
 def get_driver(config, download_dir=None):
@@ -80,4 +77,3 @@ def prepare_images(temp_dir):
     path_600 = os.path.join(temp_dir, '600x600.png')
     pic_600.save(path_600)
     return {256: path_256, 600: path_600}
-

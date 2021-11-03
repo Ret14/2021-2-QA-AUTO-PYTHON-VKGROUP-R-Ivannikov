@@ -1,19 +1,14 @@
-import logging
-import time
-import string
-import random
-
 import allure
-from selenium.webdriver import ActionChains
-from ui.pages.base_page import *
-from ui.pages.create_segment_page import *
+from ui.locators import basic_locators
+from ui.pages.base_page import BasePage
+from ui.pages.create_segment_page import CreateSegmentPage
+from utils.decorators import wait
 
 
 class AudiencePage(BasePage):
+
     locators = basic_locators.AudiencePageLocators
-    title = 'Список сегментов'
     segment_name = None
-    url = 'https://target.my.com/segments/segments_list'
 
     @allure.step('Clicking on "Create segment"')
     def create_segment(self):
@@ -22,20 +17,15 @@ class AudiencePage(BasePage):
         else:
             self.click(self.locators.CREATE_SEGMENT_BTN)
 
-        self.logger.info(f'Going on {CreateSegmentPage.__name__}')
         return CreateSegmentPage(driver=self.driver)
 
     @allure.step('Discarding a segment')
     def delete_segment(self):
         with allure.step('Composing a cross locator'):
-            segment_title_locator = (self.locators.SEGMENT_TITLE_TEMPLATE[0],
-                                     self.locators.SEGMENT_TITLE_TEMPLATE[1].format(self.segment_name)
-                                     )
+            segment_title_locator = self.format_locator(self.locators.SEGMENT_TITLE_TEMPLATE, self.segment_name)
             row_attribute = self.find(segment_title_locator).get_attribute('data-row-id')
-            cross_locator = (self.locators.DELETE_SEGMENT_BTN_TEMPLATE[0],
-                             self.locators.DELETE_SEGMENT_BTN_TEMPLATE[1].format(row_attribute)
-                             )
+            cross_locator = self.format_locator(self.locators.DELETE_SEGMENT_BTN_TEMPLATE, row_attribute)
         self.click(cross_locator)
         self.click(self.locators.DELETE_BTN)
+        wait(method=self.not_on_page, locator=self.locators.DELETE_BTN)
         self.logger.info(f'Segment "{self.segment_name}" is deleted')
-        self.driver.refresh()

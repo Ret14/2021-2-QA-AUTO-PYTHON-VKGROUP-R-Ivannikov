@@ -1,20 +1,10 @@
 import os
-
 import allure
 import pytest
-from _pytest.fixtures import FixtureRequest
-# from selenium.webdriver.remote.webdriver import WebDriver
-
-from ui.pages.base_page import BasePage
-from ui.pages.campaign_page import CampaignPage
-from ui.fixtures import get_driver
+from ui.pages.login_page import LoginPage
 
 
 class BaseCase:
-
-    driver = None
-    authorize = True
-    authorize_fail = False
 
     @pytest.fixture(scope='function', autouse=True)
     def ui_report(self, driver, request, temp_dir):
@@ -33,39 +23,37 @@ class BaseCase:
             with open(browser_log, 'r') as f:
                 allure.attach(f.read(), 'browser.log', attachment_type=allure.attachment_type.TEXT)
 
-    @pytest.fixture(scope='session')
-    def cookies(self, config, credentials):
-        driver = get_driver(config=config)
-        driver.get(url=config['url'])
-        driver.maximize_window()
-        login_page = BasePage(driver=driver)
-        login_page.login(*credentials)
-        cookies = driver.get_cookies()
-        driver.quit()
-
-        return cookies
-
     @pytest.fixture(scope='function', autouse=True)
-    def setup(self, config, logger, ui_report, temp_dir, enter):
+    def setup(self, driver, config, logger, ui_report, temp_dir):
         self.config = config
+        self.driver = driver
         self.logger = logger
         self.path = temp_dir
-        self.campaign_page = enter
+        self.login_page = LoginPage(driver=self.driver)
 
     @pytest.fixture(scope='function')
-    def enter(self, driver, credentials, request: FixtureRequest):
-        self.driver = driver
-        self.login_page = BasePage(driver=self.driver)
-        if self.authorize_fail:
-            return None
-        if self.authorize:
-            cookies = request.getfixturevalue('cookies')
-            for cookie in cookies:
-                self.driver.add_cookie(cookie)
+    def login(self, credentials):
+        return self.login_page.login(*credentials)
 
-            self.driver.refresh()
+    @pytest.fixture(scope='function')
+    def create_segment_page(self, audience_page):
+        return audience_page.create_segment()
 
-        else:
-            self.login_page.login(*credentials)
+    @pytest.fixture(scope='function')
+    def audience_page(self, campaign_page):
+        return campaign_page.go_to_audience_page()
 
-        return CampaignPage(driver=self.driver)
+    @pytest.fixture(scope='function')
+    def create_campaign_page(self, campaign_page):
+        return campaign_page.create_campaign()
+
+    @pytest.fixture(scope='function')
+    def campaign_page(self, login):
+        return login
+
+    def make_a_shot(self, name=None):
+        name = name + '.png'
+        screenshot = os.path.join(self.path, name)
+        self.driver.get_screenshot_as_file(screenshot)
+        allure.attach.file(screenshot, name=name, attachment_type=allure.attachment_type.PNG)
+

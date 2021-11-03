@@ -1,79 +1,55 @@
-import os
-import time
-from contextlib import contextmanager
-
 import allure
-import requests
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from _pytest.fixtures import FixtureRequest
-
 from base import BaseCase
-from ui.locators import basic_locators
 import pytest
 
 
 @pytest.mark.UI
 class TestLoginNegative(BaseCase):
-    authorize_fail = True
 
     @allure.story('Log in negative test')
     def test_false_login(self, credentials):
-        self.login_page.false_login(*credentials, false_login=True)
-        self.login_page.make_a_shot(name='trying_false_login', path=self.path)
-        assert 'https://account.my.com/login/?error_code=1' in self.login_page.driver.current_url
+        result = self.login_page.login(user=self.login_page.generate_string()+'@mail.ru', password=credentials[1])
+        self.make_a_shot(name='trying_false_login')
+        assert result.__class__.__name__ == 'str'
 
     @allure.story('Log in negative test')
     def test_false_password(self, credentials):
-        self.login_page.false_login(*credentials, false_password=True)
-        self.login_page.make_a_shot(name='trying_false_password', path=self.path)
-        assert 'https://account.my.com/login/?error_code=1' in self.login_page.driver.current_url
+        result = self.login_page.login(user=credentials[0], password=self.login_page.generate_string())
+        self.make_a_shot(name='trying_false_password')
+        assert result.__class__.__name__ == 'str'
 
 
 @pytest.mark.UI
 class TestAdCreation(BaseCase):
-    authorize = False
 
     @allure.story('Campaign creation test')
-    def test_campaign_created(self, prepare_images):
-        campaign_page = self.campaign_page
-        create_campaign_page = campaign_page.create_campaign()
+    def test_campaign_created(self, campaign_page, create_campaign_page, prepare_images):
         campaign_page = create_campaign_page.create_new_campaign(pictures=prepare_images, campaign_page=campaign_page)
-        assert campaign_page.ad_name in campaign_page.driver.page_source
-        campaign_page.make_a_shot(name=f'new_campaign_was_created', path=self.path)
+        campaign = campaign_page.format_locator(campaign_page.locators.SEARCH_BY_TEXT, campaign_page.ad_name)
+        assert campaign_page.elements_find(campaign)
+        self.make_a_shot(name=f'campaign_{campaign_page.ad_name}_created')
         campaign_page.delete_campaign()
 
 
 @pytest.mark.UI
 class TestSegment(BaseCase):
-    authorize = False
 
     @allure.story('Segment creation test')
-    def test_segment_creation(self):
-        campaign_page = self.campaign_page
-        audience_page = campaign_page.go_to_audience_page()
-        create_segment_page = audience_page.create_segment()
+    def test_segment_creation(self, audience_page, create_segment_page):
         audience_page = create_segment_page.create_new_segment(audience_page=audience_page)
-        segment = (audience_page.locators.SEGMENT_NAME_TEMPLATE[0],
-                   audience_page.locators.SEGMENT_NAME_TEMPLATE[1].format(audience_page.segment_name)
-                   )
-        assert audience_page.is_on_page(segment)
-        audience_page.make_a_shot(name=f'new_segment_was_created', path=self.path)
+        segment = audience_page.format_locator(audience_page.locators.SEARCH_BY_TEXT, audience_page.segment_name)
+        assert audience_page.elements_find(locator=segment)
+        self.make_a_shot(name=f'segment_{audience_page.segment_name}_created')
         audience_page.delete_segment()
 
     @allure.story('Segment discarding test')
-    def test_segment_create_and_discard(self):
-        campaign_page = self.campaign_page
-        audience_page = campaign_page.go_to_audience_page()
-        create_segment_page = audience_page.create_segment()
+    def test_segment_create_and_discard(self, audience_page, create_segment_page):
         audience_page = create_segment_page.create_new_segment(audience_page=audience_page)
-        segment = (audience_page.locators.SEGMENT_NAME_TEMPLATE[0],
-                   audience_page.locators.SEGMENT_NAME_TEMPLATE[1].format(audience_page.segment_name)
-                   )
-        audience_page.make_a_shot(name=f'new_segment_was_created', path=self.path)
+        segment = audience_page.format_locator(audience_page.locators.SEARCH_BY_TEXT, audience_page.segment_name)
+        self.make_a_shot(name=f'segment_{audience_page.segment_name}_created')
         audience_page.delete_segment()
-        assert audience_page.is_not_on_page(segment)
-        audience_page.make_a_shot(name=f'segment_was_deleted', path=self.path)
+        assert audience_page.not_on_page(segment)
+        self.make_a_shot(name=f'segment_{audience_page.segment_name}_deleted')
 
 
 

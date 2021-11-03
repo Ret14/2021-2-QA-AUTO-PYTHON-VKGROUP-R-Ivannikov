@@ -1,11 +1,5 @@
-import logging
-import os
 import shutil
 import sys
-
-import allure
-import pytest
-
 from ui.fixtures import *
 
 
@@ -33,8 +27,6 @@ def config(request):
         vnc = False
 
     return {'browser': browser, 'url': url, 'debug_log': debug_log, 'selenoid': selenoid, 'vnc': vnc}
-
-
 
 @pytest.fixture(scope='function')
 def logger(temp_dir, config):
