@@ -59,4 +59,3 @@ class CreateSegmentPageLocators(NavBarLocators):
     ADD_SEGMENT_BTN = (By.XPATH, '//button[@data-class-name="Submit" and not(@disabled)]')
     SEGMENT_NAME_INPUT = (By.XPATH, '//div[contains(@class, "input_create-segment-form")]//input')
     CREATE_SEGMENT_BTN = (By.XPATH, '//button[@data-class-name="Submit"]')
-

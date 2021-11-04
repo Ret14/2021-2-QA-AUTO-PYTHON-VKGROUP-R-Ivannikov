@@ -50,6 +50,3 @@ class TestSegment(BaseCase):
         audience_page.delete_segment()
         assert audience_page.not_on_page(segment)
         self.make_a_shot(name=f'segment_{audience_page.segment_name}_deleted')
-
-
-

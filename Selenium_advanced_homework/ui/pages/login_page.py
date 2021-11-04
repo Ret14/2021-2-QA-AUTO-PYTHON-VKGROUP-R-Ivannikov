@@ -15,7 +15,3 @@ class LoginPage(BasePage):
         self.fill_up(self.locators.PASSWORD_FIELD, password + Keys.RETURN)
         current_url = self.redirect_wait(timeout=2)
         return current_url
-        # if current_url.startswith('https://target.my.com/dashboard'):
-        #     return CampaignPage(driver=self.driver)
-        # else:
-        #     return current_url

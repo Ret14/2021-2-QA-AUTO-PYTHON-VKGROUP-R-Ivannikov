@@ -10,7 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 
 def get_driver(config, download_dir=None):
-    browser_name = config['browser']
+
     selenoid = config['selenoid']
     vnc = config['vnc']
 

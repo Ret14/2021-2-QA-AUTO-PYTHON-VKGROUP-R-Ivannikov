@@ -59,4 +59,3 @@ class BaseCase:
         screenshot = os.path.join(self.path, name)
         self.driver.get_screenshot_as_file(screenshot)
         allure.attach.file(screenshot, name=name, attachment_type=allure.attachment_type.PNG)
-
