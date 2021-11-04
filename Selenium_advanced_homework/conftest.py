@@ -4,8 +4,6 @@ from ui.fixtures import *
 
 
 def pytest_addoption(parser):
-    parser.addoption('--browser', default='chrome')
-    parser.addoption('--url', default='https://target.my.com/')
     parser.addoption('--selenoid', action='store_true')
     parser.addoption('--vnc', action='store_true')
     parser.addoption('--debug_log', action='store_true')
@@ -13,8 +11,8 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope='session')
 def config(request):
-    browser = request.config.getoption('--browser')
-    url = request.config.getoption('--url')
+    browser = 'chrome'
+    url = 'https://target.my.com/'
     debug_log = request.config.getoption('--debug_log')
     if request.config.getoption('--selenoid'):
         selenoid = 'http://127.0.0.1:4444/wd/hub'

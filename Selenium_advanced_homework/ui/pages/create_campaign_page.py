@@ -15,7 +15,7 @@ class CreateCampaignPage(BasePage):
         content = self.generate_string() + '.ru'
         with allure.step('Filling up link form'):
             self.fill_up(self.locators.LINK_INPUT, content)
-        wait(method=self.elements_find, locator=self.locators.CAMPAIGN_NAME_INPUT)
+        wait(method=self.elements_find, locator=self.locators.ROUNDABOUT_TAB)
         self.click(self.locators.ROUNDABOUT_TAB)
         wait(method=self.elements_find, locator=self.format_locator(self.locators.SLIDE_LINK_INPUT_TEMPLATE, 1))
         self.fill_up(self.locators.AD_TITLE_INPUT, content)

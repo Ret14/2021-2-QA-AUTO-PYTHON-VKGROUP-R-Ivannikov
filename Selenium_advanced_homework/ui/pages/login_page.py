@@ -1,7 +1,6 @@
 from selenium.webdriver.common.keys import Keys
 from ui.locators import basic_locators
 from ui.pages.base_page import BasePage
-from ui.pages.campaign_page import CampaignPage
 from utils.decorators import wait
 
 
@@ -15,7 +14,8 @@ class LoginPage(BasePage):
         self.fill_up(self.locators.EMAIL_FIELD, user)
         self.fill_up(self.locators.PASSWORD_FIELD, password + Keys.RETURN)
         current_url = self.redirect_wait(timeout=2)
-        if current_url.startswith('https://target.my.com/dashboard'):
-            return CampaignPage(driver=self.driver)
-        else:
-            return current_url
+        return current_url
+        # if current_url.startswith('https://target.my.com/dashboard'):
+        #     return CampaignPage(driver=self.driver)
+        # else:
+        #     return current_url

@@ -1,4 +1,6 @@
-from ui.pages.create_campaign_page import *
+import allure
+from ui.locators import basic_locators
+from ui.pages.create_campaign_page import CreateCampaignPage
 from ui.pages.audience_page import AudiencePage
 from ui.pages.base_page import BasePage
 
@@ -10,7 +12,7 @@ class CampaignPage(BasePage):
 
     @allure.step('Clicking on "Create campaign" button')
     def create_campaign(self):
-        if self.driver.find_elements(self.locators.FIRST_CREATE_BTN[0], self.locators.FIRST_CREATE_BTN[1]):
+        if self.elements_find(self.locators.FIRST_CREATE_BTN):
             self.click(self.locators.FIRST_CREATE_BTN)
         else:
             self.click(self.locators.CREATE_BTN)

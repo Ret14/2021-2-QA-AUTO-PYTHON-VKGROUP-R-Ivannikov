@@ -7,7 +7,6 @@ import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
 
 
 def get_driver(config, download_dir=None):
@@ -15,32 +14,25 @@ def get_driver(config, download_dir=None):
     selenoid = config['selenoid']
     vnc = config['vnc']
 
-    if browser_name == 'chrome':
-        options = Options()
-        if download_dir is not None:
-            options.add_experimental_option("prefs", {"download.default_directory": download_dir})
+    options = Options()
+    if download_dir is not None:
+        options.add_experimental_option("prefs", {"download.default_directory": download_dir})
 
-        if selenoid:
-            options.add_experimental_option("prefs", {"download.default_directory": '/home/selenium/Downloads'})
-            capabilities = {
-                'browserName': 'chrome',
-                'version': '89.0'
-            }
-            if vnc:
-                capabilities['version'] += '_vnc'
-                capabilities['enableVNC'] = True
+    if selenoid:
+        options.add_experimental_option("prefs", {"download.default_directory": '/home/selenium/Downloads'})
+        capabilities = {
+            'browserName': 'chrome',
+            'version': '89.0'
+        }
+        if vnc:
+            capabilities['version'] += '_vnc'
+            capabilities['enableVNC'] = True
 
-            browser = webdriver.Remote(selenoid, options=options,
+        browser = webdriver.Remote(selenoid, options=options,
                                        desired_capabilities=capabilities)
-        else:
-            manager = ChromeDriverManager(version='latest', log_level=logging.CRITICAL)
-            browser = webdriver.Chrome(executable_path=manager.install(), options=options)
-
-    elif browser_name == 'firefox':
-        manager = GeckoDriverManager(version='latest')
-        browser = webdriver.Firefox(executable_path=manager.install())
     else:
-        raise RuntimeError(f'Unsupported browser: {browser_name}')
+        manager = ChromeDriverManager(version='latest', log_level=logging.CRITICAL)
+        browser = webdriver.Chrome(executable_path=manager.install(), options=options)
 
     return browser
 

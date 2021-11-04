@@ -8,15 +8,15 @@ class TestLoginNegative(BaseCase):
 
     @allure.story('Log in negative test')
     def test_false_login(self, credentials):
-        result = self.login_page.login(user=self.login_page.generate_string()+'@mail.ru', password=credentials[1])
+        url = self.login_page.login(user=self.login_page.generate_string()+'@mail.ru', password=credentials[1])
         self.make_a_shot(name='trying_false_login')
-        assert result.__class__.__name__ == 'str'
+        assert url.startswith('https://target.my.com/dashboard')
 
     @allure.story('Log in negative test')
     def test_false_password(self, credentials):
-        result = self.login_page.login(user=credentials[0], password=self.login_page.generate_string())
+        url = self.login_page.login(user=credentials[0], password=self.login_page.generate_string())
         self.make_a_shot(name='trying_false_password')
-        assert result.__class__.__name__ == 'str'
+        assert url.startswith('https://target.my.com/dashboard')
 
 
 @pytest.mark.UI

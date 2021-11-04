@@ -2,6 +2,7 @@ import os
 import allure
 import pytest
 from ui.pages.login_page import LoginPage
+from ui.pages.campaign_page import CampaignPage
 
 
 class BaseCase:
@@ -33,7 +34,9 @@ class BaseCase:
 
     @pytest.fixture(scope='function')
     def login(self, credentials):
-        return self.login_page.login(*credentials)
+        if self.login_page.login(*credentials).startswith('https://target.my.com/dashboard'):
+            return CampaignPage(driver=self.driver)
+
 
     @pytest.fixture(scope='function')
     def create_segment_page(self, audience_page):
