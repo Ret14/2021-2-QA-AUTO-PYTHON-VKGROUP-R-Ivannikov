@@ -37,9 +37,11 @@ class BasePage(object):
         return ActionChains(self.driver)
 
     @staticmethod
-    def generate_string(length=10):
+    def generate_string(length=6):
         letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(length))
+        random_string = ''.join(random.choice(letters) for i in range(length))
+        random_string = random_string + str(int(time.time()) % 10000)
+        return random_string
 
     def scroll_to(self, element):
         self.driver.execute_script('arguments[0].scrollIntoView(true);', element)

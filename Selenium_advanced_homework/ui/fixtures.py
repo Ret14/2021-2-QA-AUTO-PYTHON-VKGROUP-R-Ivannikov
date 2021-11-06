@@ -50,8 +50,9 @@ def driver(config, temp_dir):
 
 
 @pytest.fixture(scope='session')
-def credentials(path='C:\\tmp\\user\\credentials.txt'):
-    with open(path, 'r') as f:
+def credentials(repo_root, file_name='credentials.txt'):
+    cred_path = os.path.join(repo_root, file_name)
+    with open(cred_path, 'r') as f:
         user = f.readline().strip()
         password = f.readline().strip()
 
