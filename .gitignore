@@ -1,5 +1,6 @@
 .idea/
 .venv/
+xvenv/
 credentials.txt
 
 # Byte-compiled / optimized / DLL files
