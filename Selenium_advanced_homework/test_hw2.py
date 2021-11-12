@@ -10,13 +10,13 @@ class TestLoginNegative(BaseCase):
     def test_false_login(self, credentials):
         url = self.login_page.login(user=self.login_page.generate_string()+'@mail.ru', password=credentials[1])
         self.make_a_shot(name='trying_false_login')
-        assert url.startswith('https://target.my.com/dashboard')
+        assert not url.startswith('https://target.my.com/dashboard')
 
     @allure.story('Log in negative test')
     def test_false_password(self, credentials):
         url = self.login_page.login(user=credentials[0], password=self.login_page.generate_string())
         self.make_a_shot(name='trying_false_password')
-        assert url.startswith('https://target.my.com/dashboard')
+        assert not url.startswith('https://target.my.com/dashboard')
 
 
 @pytest.mark.UI

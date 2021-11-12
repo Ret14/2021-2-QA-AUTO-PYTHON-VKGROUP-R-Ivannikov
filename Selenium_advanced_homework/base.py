@@ -37,7 +37,6 @@ class BaseCase:
         if self.login_page.login(*credentials).startswith('https://target.my.com/dashboard'):
             return CampaignPage(driver=self.driver)
 
-
     @pytest.fixture(scope='function')
     def create_segment_page(self, audience_page):
         return audience_page.create_segment()

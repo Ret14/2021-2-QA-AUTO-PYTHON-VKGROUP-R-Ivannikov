@@ -4,8 +4,6 @@ from ui.fixtures import *
 
 
 def pytest_addoption(parser):
-    parser.addoption('--selenoid', action='store_true')
-    parser.addoption('--vnc', action='store_true')
     parser.addoption('--debug_log', action='store_true')
 
 
@@ -14,17 +12,8 @@ def config(request):
     browser = 'chrome'
     url = 'https://target.my.com/'
     debug_log = request.config.getoption('--debug_log')
-    if request.config.getoption('--selenoid'):
-        selenoid = 'http://127.0.0.1:4444/wd/hub'
-        if request.config.getoption('--vnc'):
-            vnc = True
-        else:
-            vnc = False
-    else:
-        selenoid = None
-        vnc = False
+    return {'browser': browser, 'url': url, 'debug_log': debug_log}
 
-    return {'browser': browser, 'url': url, 'debug_log': debug_log, 'selenoid': selenoid, 'vnc': vnc}
 
 @pytest.fixture(scope='function')
 def logger(temp_dir, config):
