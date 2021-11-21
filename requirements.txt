@@ -19,6 +19,7 @@ six==1.16.0
 toml==0.10.2
 urllib3==1.26.7
 selenium==3.141.0
+Appium-Python-Client==2.0.0
 crayons==0.4.0
 configparser==5.1.0
 webdriver-manager==3.5.2
