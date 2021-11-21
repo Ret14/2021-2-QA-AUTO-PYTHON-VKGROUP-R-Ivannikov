@@ -3,76 +3,26 @@ import random
 import string
 import time
 import json
-from urllib.parse import urljoin
 import requests
-from requests.cookies import cookiejar_from_dict
 
 logger = logging.getLogger('test')
-MAX_RESPONSE_LENGTH = 400
+MAX_RESPONSE_LENGTH = 300
 
 
 class ApiClient:
 
-    base_url = 'https://target.my.com/api'
     segment_id = None
+    camp_id = None
+    csrf = None
+    image_id = None
 
     def __init__(self, user, password):
         self.user = user
         self.password = password
         self.session = requests.Session()
-        self.csrf = None
-        self.image_id = None
 
-    def post_login(self):
-        headers = {
-            'Referer': 'https://target.my.com/'
-        }
-        data = {
-            'email': self.user,
-            'password': self.password,
-            'continue': 'https://target.my.com/auth/mycom?state=target_login%3D1%26ignore_opener%3D1#email',
-            'failure': 'https://account.my.com/login/'
-        }
-        response = requests.post(url='https://auth-ac.my.com/auth?lang=ru&nosavelogin=0',
-                             data=data, headers=headers, allow_redirects=True
-                             )
-        return response
-
-    @staticmethod
-    def catch_cookie(response, cookie_name, set_cookie_name='Set-Cookie'):
-        set_cookie = response.headers[set_cookie_name].split(';')
-        return [c for c in set_cookie if cookie_name in c][0].split('=')[-1]
-
-    def get_csrf(self):
-        headers = {
-            'Referer': 'https://target.my.com/dashboard'
-        }
-        resp = self.session.request(method='GET', url='https://target.my.com/csrf/', headers=headers)
-        set_cookie = resp.headers['set-cookie'].split(';')
-        return [c for c in set_cookie if 'csrftoken' in c][0].split('=')[-1]
-
-    def collect_cookies(self, post_login_response):
-        self.session.cookies = cookiejar_from_dict({
-            'mc': self.catch_cookie(post_login_response.history[0], 'mc'),
-            'mrcu': self.catch_cookie(post_login_response.history[0], 'mrcu'),
-            'sdc': self.catch_cookie(post_login_response.history[4], 'sdc'),
-            'z': self.catch_cookie(post_login_response, 'z'),
-        })
-
-    def target_authorize(self):
-        post_login_response = self.post_login()
-        self.collect_cookies(post_login_response)
-        headers = {
-            'Referer': 'https://target.my.com/auth/mycom?state=target_login%3D1%26ignore_opener%3D1'
-        }
-        self.session.request(method='GET', url='https://target.my.com/dashboard', headers=headers)
-        self.csrf = self.get_csrf()
-        self.session.cookies.set(name='csrftoken', value=self.csrf)
-
-    def headers_xcsrf(self):
-        return {
-            'X-CSRFToken': self.csrf,
-        }
+    def headers_csrf(self):
+        return {'X-CSRFToken': self.csrf}
 
     @staticmethod
     def generate_string(length=10):
@@ -103,30 +53,126 @@ class ApiClient:
             "logicType": "or"
         }
         data = json.dumps(data, indent=4)
+        self.log_pre(url='https://target.my.com/api/v2/remarketing/segments.json', summary='Creating segment')
         resp = self.session.request(method='POST', url='https://target.my.com/api/v2/remarketing/segments.json',
-                                    data=data, params=query, headers=self.headers_xcsrf(), json=True
-                                    )
-        logger.info(f'Segment Got: {resp.status_code} \n Content: {resp.text}')
-        segment_json = json.loads(resp.text)
-        self.segment_id = segment_json['id']
-        self.segment_assertion()
-        # yield resp
-        # self.delete_segment()
-
-    def segment_assertion(self):
-        response = self.session.request(url=f'https://target.my.com/api/v2/remarketing/segments/{self.segment_id}.json',
-                                        method='GET')
-        logger.info(f'Got: {response.status_code} \n Content: {response.text}')
-        assert response.ok
+                                    data=data, params=query, headers=self.headers_csrf())
+        self.log_post(resp)
+        self.segment_id = json.loads(resp.text)['id']
 
     def delete_segment(self):
-        response = self.session.request(method='DELETE', headers=self.headers_xcsrf(),
+        self.log_pre(url=f'https://target.my.com/api/v2/remarketing/segments/{self.segment_id}.json',
+                     summary=f'Deleting segment with id {self.segment_id}')
+        response = self.session.request(method='DELETE', headers=self.headers_csrf(),
                                         url=f'https://target.my.com/api/v2/remarketing/segments/{self.segment_id}.json'
                                         )
-        self.segment_gone_assertion()
+        self.log_post(response)
 
-    def segment_gone_assertion(self):
+    def segment_exist_check(self):
         response = self.session.request(url=f'https://target.my.com/api/v2/remarketing/segments/{self.segment_id}.json',
                                         method='GET')
-        logger.info(f'Got: {response.status_code} \n Content: {response.text}')
-        assert not response.ok
+        return response.ok
+
+    def post_camp(self, image_id):
+        headers = {
+            'X-Campaign-Create-Action': 'new',
+            'X-CSRFToken': self.csrf,
+            'X-KL-Ajax-Request': 'Ajax_Request',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json',
+
+        }
+        with open('api/camp_pattern.json', 'r') as f:
+            camp_payload = json.load(f)
+
+        camp_payload['name'] = self.generate_string()
+        camp_payload['banners'][0]['content']['image_240x400']['id'] = image_id
+        self.log_pre(url='https://target.my.com/api/v2/campaigns.json', expected_status=200,
+                     summary='Creating campaign')
+
+        resp = self.session.request(method='POST', url='https://target.my.com/api/v2/campaigns.json',
+                                    headers=headers, json=camp_payload, allow_redirects=True)
+
+        self.log_post(resp)
+        self.camp_id = json.loads(resp.text)['id']
+        return resp
+
+    def camp_discard(self):
+        data = {"status": "deleted"}
+        headers = {
+            'X-CSRFToken': self.csrf,
+            'X-KL-Ajax-Request': 'Ajax_Request',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Target-Sudo': self.user
+        }
+        self.log_pre(url=f'https://target.my.com/api/v2/campaigns/{self.camp_id}.json',
+                     summary=f'Deleting campaign with id {self.camp_id}')
+        resp = self.session.request(method='POST', headers=headers, json=data,
+                                    url=f'https://target.my.com/api/v2/campaigns/{self.camp_id}.json')
+        self.log_post(resp)
+
+    def post_image(self, image_path):
+        file = {
+            'file': open(image_path, 'rb'),
+            'data': '{"width": 0, "height": 0,}'
+        }
+        headers = {
+            'X-CSRFToken': self.csrf
+        }
+        self.log_pre(url='https://target.my.com/api/v2/content/static.json', expected_status=200,
+                     summary='Uploading image')
+        resp = self.session.request(method='POST', headers=headers, files=file,
+                                    url='https://target.my.com/api/v2/content/static.json')
+        self.log_post(resp)
+        return json.loads(resp.text)['id']
+
+    def target_authorize(self):
+        headers = {
+            'Referer': 'https://target.my.com/'
+        }
+        data = {
+            'email': self.user,
+            'password': self.password,
+            'continue': 'https://target.my.com/auth/mycom?state=target_login%3D1%26ignore_opener%3D1#email',
+            'failure': 'https://account.my.com/login/'
+        }
+        self.log_pre(url='https://auth-ac.my.com/auth?lang=ru&nosavelogin=0', expected_status=200,
+                     summary='Logging into')
+        response = self.session.request(method='POST', data=data, headers=headers, allow_redirects=True,
+                                        url='https://auth-ac.my.com/auth?lang=ru&nosavelogin=0')
+        self.log_post(response)
+        self.session.request(method='GET', url='https://target.my.com/dashboard')
+        resp = self.session.request(method='GET', url='https://target.my.com/csrf/')
+        self.csrf = resp.cookies.get('csrftoken')
+
+    def camp_existence_check(self):
+        resp = self.session.request(url='https://target.my.com/api/v2/campaigns.json?fields=id%2Cname%'
+                                        '2Cpackage_priced_event_type%2Cautobidding_mode&sorting=-id&'
+                                        'limit=10&offset=0&_status__in=active',
+                                    method='GET')
+        return [c['id'] for c in json.loads(resp.text)['items'] if c['id'] == self.camp_id]
+
+    @staticmethod
+    def log_pre(url, summary, expected_status=200):
+        logger.info(f' *{summary}* Performing request:\n'
+                    f'URL: {url}\n'
+                    f'expected status: {expected_status}\n')
+
+    @staticmethod
+    def log_post(response):
+        log_str = f'RESPONSE STATUS: {response.status_code}'
+
+        if len(response.text) > MAX_RESPONSE_LENGTH:
+            if logger.level == logging.INFO:
+                logger.info(f'{log_str}\n'
+                            f'RESPONSE CONTENT: COLLAPSED due to response size > {MAX_RESPONSE_LENGTH}. '
+                            f'Use DEBUG logging.\n'
+                            f'{response.text[:MAX_RESPONSE_LENGTH]}'
+                            )
+            elif logger.level == logging.DEBUG:
+                logger.info(f'{log_str}\n'
+                            f'RESPONSE CONTENT: {response.text}\n\n'
+                            )
+        else:
+            logger.info(f'{log_str}\n'
+                        f'RESPONSE CONTENT: {response.text}\n'
+                        )
