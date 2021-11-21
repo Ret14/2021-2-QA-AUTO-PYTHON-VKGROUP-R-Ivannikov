@@ -79,7 +79,6 @@ class ApiClient:
             'X-KL-Ajax-Request': 'Ajax_Request',
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json',
-
         }
         with open('api/camp_pattern.json', 'r') as f:
             camp_payload = json.load(f)
