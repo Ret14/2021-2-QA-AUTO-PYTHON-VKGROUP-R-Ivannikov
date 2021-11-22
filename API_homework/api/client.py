@@ -1,4 +1,5 @@
 import logging
+import os.path
 import random
 import string
 import time
@@ -16,10 +17,11 @@ class ApiClient:
     csrf = None
     image_id = None
 
-    def __init__(self, user, password):
+    def __init__(self, user, password, repo_root):
         self.user = user
         self.password = password
         self.session = requests.Session()
+        self.repo_root = repo_root
 
     def headers_csrf(self):
         return {'X-CSRFToken': self.csrf}
@@ -27,35 +29,24 @@ class ApiClient:
     @staticmethod
     def generate_string(length=10):
         letters = string.ascii_lowercase
-        random_string = ''.join(random.choice(letters) for i in range(length-4))
-        random_string = random_string + str(int(time.time()) % 10000)
-        return random_string
+        return ''.join(random.choice(letters) for i in range(length-4)) + str(int(time.time()) % 10000)
+
+    def get_csrf(self):
+        resp = self.session.request(method='GET', url='https://target.my.com/csrf/')
+        return resp.cookies.get('csrftoken')
 
     def post_segment(self):
         query = {
             'fields': 'relations__object_type,relations__object_id,relations__params,relations__params__score,'
                       'relations__id,relations_count,id,name,pass_condition,created,campaign_ids,users,flags'
         }
-        data = {
-            "name": self.generate_string(),
-            "pass_condition": 1,
-            "relations": [
-                {
-                    "object_type": "remarketing_player",
-                    "params":
-                        {
-                        "type": "positive",
-                        "left": 365,
-                        "right": 0
-                    }
-                }
-            ],
-            "logicType": "or"
-        }
-        data = json.dumps(data, indent=4)
+        with open(os.path.join(self.repo_root, 'api/segment_pattern.json'), 'r') as f:
+            segment_payload = json.load(f)
+
+        segment_payload['name'] = self.generate_string()
         self.log_pre(url='https://target.my.com/api/v2/remarketing/segments.json', summary='Creating segment')
         resp = self.session.request(method='POST', url='https://target.my.com/api/v2/remarketing/segments.json',
-                                    data=data, params=query, headers=self.headers_csrf())
+                                    json=segment_payload, params=query, headers=self.headers_csrf())
         self.log_post(resp)
         self.segment_id = json.loads(resp.text)['id']
 
@@ -76,21 +67,16 @@ class ApiClient:
         headers = {
             'X-Campaign-Create-Action': 'new',
             'X-CSRFToken': self.csrf,
-            'X-KL-Ajax-Request': 'Ajax_Request',
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json',
         }
-        with open('api/camp_pattern.json', 'r') as f:
+        with open(os.path.join(self.repo_root, 'api/camp_pattern.json'), 'r') as f:
             camp_payload = json.load(f)
 
         camp_payload['name'] = self.generate_string()
         camp_payload['banners'][0]['content']['image_240x400']['id'] = image_id
-        self.log_pre(url='https://target.my.com/api/v2/campaigns.json', expected_status=200,
-                     summary='Creating campaign')
 
+        self.log_pre(url='https://target.my.com/api/v2/campaigns.json', summary='Creating campaign')
         resp = self.session.request(method='POST', url='https://target.my.com/api/v2/campaigns.json',
                                     headers=headers, json=camp_payload, allow_redirects=True)
-
         self.log_post(resp)
         self.camp_id = json.loads(resp.text)['id']
         return resp
@@ -99,8 +85,6 @@ class ApiClient:
         data = {"status": "deleted"}
         headers = {
             'X-CSRFToken': self.csrf,
-            'X-KL-Ajax-Request': 'Ajax_Request',
-            'X-Requested-With': 'XMLHttpRequest',
             'X-Target-Sudo': self.user
         }
         self.log_pre(url=f'https://target.my.com/api/v2/campaigns/{self.camp_id}.json',
@@ -140,10 +124,9 @@ class ApiClient:
                                         url='https://auth-ac.my.com/auth?lang=ru&nosavelogin=0')
         self.log_post(response)
         self.session.request(method='GET', url='https://target.my.com/dashboard')
-        resp = self.session.request(method='GET', url='https://target.my.com/csrf/')
-        self.csrf = resp.cookies.get('csrftoken')
+        self.csrf = self.get_csrf()
 
-    def camp_existence_check(self):
+    def camp_exist_check(self):
         resp = self.session.request(url='https://target.my.com/api/v2/campaigns.json?fields=id%2Cname%'
                                         '2Cpackage_priced_event_type%2Cautobidding_mode&sorting=-id&'
                                         'limit=10&offset=0&_status__in=active',
@@ -152,7 +135,7 @@ class ApiClient:
 
     @staticmethod
     def log_pre(url, summary, expected_status=200):
-        logger.info(f' *{summary}* Performing request:\n'
+        logger.info(f' * {summary} * Performing request:\n'
                     f'URL: {url}\n'
                     f'expected status: {expected_status}\n')
 

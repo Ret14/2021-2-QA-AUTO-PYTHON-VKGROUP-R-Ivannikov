@@ -1,8 +1,5 @@
 import pytest
-import logging
 from base import ApiBase
-
-logger = logging.getLogger('test')
 
 
 @pytest.mark.API
@@ -23,4 +20,4 @@ class TestSegments(ApiBase):
 class TestCampaign(ApiBase):
     def test_camp_creation(self, prepare_image):
         self.api_client.post_camp(self.api_client.post_image(prepare_image))
-        assert self.api_client.camp_existence_check()
+        assert self.api_client.camp_exist_check()

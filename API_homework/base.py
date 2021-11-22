@@ -13,4 +13,4 @@ class ApiBase:
     def camp_delete(self, api_client):
         yield
         api_client.camp_discard()
-        assert not api_client.camp_existence_check()
+        assert not api_client.camp_exist_check()

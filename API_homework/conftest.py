@@ -47,7 +47,7 @@ def logger(temp_dir, config):
 
 def pytest_configure(config):
     if sys.platform.startswith('win'):
-        base_dir = 'C:\\tmp\\tests'
+        base_dir = 'C:/tmp/tests'
     else:
         base_dir = '/tmp/tests'
 
@@ -84,8 +84,8 @@ def credentials(repo_root, cred_name='credentials.txt'):
 
 
 @pytest.fixture(scope='session')
-def api_client(credentials):
-    return ApiClient(*credentials)
+def api_client(credentials, repo_root):
+    return ApiClient(*credentials, repo_root)
 
 
 @pytest.fixture(scope='function')
