@@ -58,7 +58,3 @@ class MysqlORMClient:
 
         if not inspect(self.engine).has_table('top5_4xx_err'):
             Base.metadata.tables['top5_4xx_err'].create(self.engine)
-
-    # def create_students(self):
-    #     if not inspect(self.engine).has_table('students'):
-    #         Base.metadata.tables['students'].create(self.engine)

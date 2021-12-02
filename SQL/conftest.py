@@ -1,5 +1,4 @@
 import pytest
-
 from mysql_orm.client import MysqlORMClient
 
 

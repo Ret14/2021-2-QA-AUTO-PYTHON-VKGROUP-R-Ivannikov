@@ -1,7 +1,5 @@
-from sqlalchemy import func
-
 from models.model import *
-from test_sql_orm.base import MysqlBase
+from base import MysqlBase
 
 
 class TestTableElementsAmount(MysqlBase):
