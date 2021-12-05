@@ -6,7 +6,7 @@ def repo_root():
     return os.path.abspath(os.path.join(__file__, os.pardir))
 
 def get_data():
-    with open(os.path.join(repo_root(), 'access.log'), 'r') as log:
+    with open(os.path.join(repo_root(), '../access.log'), 'r') as log:
         log_file = log.readlines()
         request_method_list = []
         urls_list = []
