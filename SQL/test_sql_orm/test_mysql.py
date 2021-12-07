@@ -1,5 +1,5 @@
 from models.model import *
-from base import MysqlBase
+from test_sql_orm.base import MysqlBase
 
 
 class TestTableElementsAmount(MysqlBase):
