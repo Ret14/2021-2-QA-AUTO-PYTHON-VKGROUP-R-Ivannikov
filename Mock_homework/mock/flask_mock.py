@@ -1,8 +1,8 @@
 #!/usr/bin/env python3.8
-import json
 import threading
 import logging
 from flask import Flask, jsonify, request
+
 
 import settings
 
@@ -19,25 +19,31 @@ def get_user_surname(name):
     if surname := SURNAME_DATA.get(name):
         return jsonify({'surname': surname}), 200
     else:
-        return jsonify(f'Surname for user "{name}" not found'), 404
+        return jsonify(f'Surname for user "{name}" not found'), 400
 
 
 @app.route('/add_surname', methods=['POST'])
 def post_user_surname():
-    user_name = json.loads(request.data)['name']
-    if user_name in SURNAME_DATA:
-        return jsonify(f'User with name "{user_name}" already got surname "{SURNAME_DATA[user_name]}"'), 400
+    data = request.get_json()
+    name = data.get('name')
+    surname = data.get('surname')
+    if name in SURNAME_DATA:
+        return jsonify(f'User with name "{name}" already got surname "{SURNAME_DATA[name]}"'), 400
     else:
-        SURNAME_DATA[user_name] = json.loads(request.data)['surname']
-        return jsonify({'name': user_name, 'surname': SURNAME_DATA[user_name]}), 200
+        SURNAME_DATA[name] = surname
+        return jsonify({'name': name, 'surname': SURNAME_DATA[name]}), 200
 
 
 @app.route('/change_surname', methods=['PUT'])
 def put_user_surname():
-    name = json.loads(request.data)['name']
-    surname = json.loads(request.data)['surname']
-    SURNAME_DATA[name] = surname
-    return jsonify({'name': name, 'surname': surname}), 200
+    data = request.get_json()
+    name = data.get('name')
+    surname = data.get('surname')
+    if name not in SURNAME_DATA:
+        return jsonify(f"User '{name}' doesn't exist"), 400
+    else:
+        SURNAME_DATA[name] = surname
+        return jsonify({'name': name, 'surname': SURNAME_DATA[name]}), 200
 
 
 @app.route('/delete_surname/<name>', methods=['DELETE'])
@@ -46,10 +52,10 @@ def delete_user_surname(name):
         del SURNAME_DATA[name]
         return jsonify(f'Surname for user "{name} deleted successfully"'), 200
     else:
-        return jsonify(f'Surname for user "{name}" not found'), 404
+        return jsonify(f'Surname for user "{name}" not found'), 400
 
 
-def shutdown_stub():
+def shutdown_mock():
     terminate_func = request.environ.get('werkzeug.server.shutdown')
     if terminate_func:
         terminate_func()
@@ -57,7 +63,7 @@ def shutdown_stub():
 
 @app.route('/shutdown')
 def shutdown():
-    shutdown_stub()
+    shutdown_mock()
     return jsonify(f'Ok, exiting'), 200
 
 
