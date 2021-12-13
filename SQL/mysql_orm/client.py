@@ -43,18 +43,7 @@ class MysqlORMClient:
         if fetch:
             return res.fetchall()
 
-    def create_tables(self):
-        if not inspect(self.engine).has_table('requests_amount'):
-            Base.metadata.tables['requests_amount'].create(self.engine)
-
-        if not inspect(self.engine).has_table('requests_by_type'):
-            Base.metadata.tables['requests_by_type'].create(self.engine)
-
-        if not inspect(self.engine).has_table('top10_most_frequent'):
-            Base.metadata.tables['top10_most_frequent'].create(self.engine)
-
-        if not inspect(self.engine).has_table('top5_5xx_err'):
-            Base.metadata.tables['top5_5xx_err'].create(self.engine)
-
-        if not inspect(self.engine).has_table('top5_4xx_err'):
-            Base.metadata.tables['top5_4xx_err'].create(self.engine)
+    def create_tables(self, tables_list: list):
+        for table_name in tables_list:
+            if not inspect(self.engine).has_table(table_name):
+                Base.metadata.tables[table_name].create(self.engine)
